@@ -1,0 +1,8 @@
+node_modules
+.env
+.env.local
+app/helper/key_file/
+dc93e4a6-9034-44df-acad-1ad02f206613
+uploads
+*.json
+.DS_Store
