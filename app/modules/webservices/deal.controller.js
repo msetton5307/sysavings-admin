@@ -16,7 +16,7 @@ const logger = new Logger();
 const RequestHandler = require(appRoot + '/helper/RequestHandler');
 const requestHandler = new RequestHandler(logger);
 const axios = require("axios");
-const { getPaginatedData } = require('../../helper/utils')
+const SYSAVINGS_API_BASE_URL = "https://api.sysavings.com";
 // response helper
 
 class DealControllerApi {
@@ -330,19 +330,23 @@ class DealControllerApi {
         try {
             console.log("hitttttt");
 
-            const response = await axios.get('https://api.sysavings.com/api/mergeJSON');
+            const page = Number(req.body.page) || 1;
+            const limit = Number(req.body.limit) || 50;
+
+            const response = await axios.get(`${SYSAVINGS_API_BASE_URL}/api/mergeJSON/paginated`, {
+                params: { page, limit }
+            });
             console.log("response: ", response);
 
             let search = req.body.search && req.body.search.trim() !== "" ? new RegExp(req.body.search, 'i') : null;
 
-            const data = search ? response.data.filter((item) => search.test(item.Name)) : response.data;
-
-            let result = await getPaginatedData(req.body.page, req.body.limit, data, search);
+            const mergedDeals = Array.isArray(response.data?.data) ? response.data.data : response.data;
+            const data = search ? mergedDeals.filter((item) => search.test(item.Name)) : mergedDeals;
 
             return requestHandler.sendSuccess(res, 'Deal Listing Fetched Successfully')({
-                page: req.body.page,
-                length: req.body.limit,
-                data: result
+                page,
+                length: limit,
+                data
             });
 
         } catch (err) {
