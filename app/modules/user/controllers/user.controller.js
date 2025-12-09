@@ -54,18 +54,17 @@ async signin(req, res) {
     req.body.roles = roles;
 
     // Fetch user with matching email + password + role
-    let userData = await userRepo.findOneWithRole(req.body);
+    const userData = await userRepo.findOneWithRole(req.body);
 
-    // Fix #1 — If userRepo returns null or undefined
-    if (!userData || !userData.data) {
+    // Guard against missing payload
+    const user = userData && userData.data ? userData.data : null;
+    if (!user || !user._id) {
       req.flash("error", "Invalid email or password.");
       return res.redirect(namedRouter.urlFor("user.login"));
     }
 
-    let user = userData.data;
-
-    // Fix #2 — Protect against missing role
-    if (!user.role) {
+    // Protect against missing role
+    if (!user.role || !user.role._id) {
       req.flash("error", "Your account has no assigned role.");
       return res.redirect(namedRouter.urlFor("user.login"));
     }
