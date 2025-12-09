@@ -220,6 +220,7 @@ class UserControllerApi {
                 await userRepo.updateByField({ device_type: req.body.device_type, device_token: req.body.device_token }, { _id: emailExists._id })
                 let refresh_token = await helper.createRefreshToken(payload)
                 let logincrediatials = {
+                    _id: emailExists._id,
                     email: req.body.email,
                     fullName: emailExists.fullName,
                     token: token,
