@@ -38,53 +38,64 @@ class UserController {
     }
   }
 
-  /* @Method: signin
-    // @Description: user Login
-    */
-  async signin(req, res) {
-    try {
-      req.body.email = req.body.email.trim().toLowerCase();
-      let roles = await roleRepo.getDistinctDocument("_id", {
-        rolegroup: "backend",
-        isDeleted: false,
-      });
-      req.body.roles = roles;
-      let userData = await userRepo.findOneWithRole(req.body);
-      if (userData.status == 500) {
-        req.flash("error", userData.message);
-        return res.redirect(namedRouter.urlFor("user.login"));
-      }
-      let user = userData.data;
-      if (user.status == "Block") {
-        req.flash("error", "Account was set Block by the Administrator");
-        return res.redirect(namedRouter.urlFor("user.login"));
-      } else if (user.status == "Banned") {
-        req.flash("error", "Account was Banned by the Administrator");
-        return res.redirect(namedRouter.urlFor("user.login"));
-      } else if (!_.isEmpty(user.role)) {
-        const payload = {
-          id: user._id,
-        };
+/* @Method: signin
+// @Description: user Login
+*/
+async signin(req, res) {
+  try {
+    req.body.email = req.body.email.trim().toLowerCase();
 
-        let token = jwt.sign(payload, config.auth.jwtSecret, {
-          expiresIn: config.auth.jwt_expiresin.toString(), // token expiration time
-        });
+    // Fetch backend roles
+    let roles = await roleRepo.getDistinctDocument("_id", {
+      rolegroup: "backend",
+      isDeleted: false,
+    });
 
-        req.session.token = token;
-        req.user = user;
+    req.body.roles = roles;
 
-        req.flash("success", "You have successfully logged in");
-        return res.redirect(namedRouter.urlFor("user.dashboard"));
-      } else {
-        req.flash("error", "Authentication failed. You are not a valid user.");
-        return res.redirect(namedRouter.urlFor("user.login"));
-      }
-    } catch (e) {
-      console.log(e);
-      throw e;
+    // Fetch user with matching email + password + role
+    let userData = await userRepo.findOneWithRole(req.body);
+
+    // Fix #1 — If userRepo returns null or undefined
+    if (!userData || !userData.data) {
+      req.flash("error", "Invalid email or password.");
+      return res.redirect(namedRouter.urlFor("user.login"));
     }
-  }
 
+    let user = userData.data;
+
+    // Fix #2 — Protect against missing role
+    if (!user.role) {
+      req.flash("error", "Your account has no assigned role.");
+      return res.redirect(namedRouter.urlFor("user.login"));
+    }
+
+    // Role-based access restrictions
+    if (user.status == "Block") {
+      req.flash("error", "Account was blocked by the Administrator.");
+      return res.redirect(namedRouter.urlFor("user.login"));
+    } else if (user.status == "Banned") {
+      req.flash("error", "Account was banned by the Administrator.");
+      return res.redirect(namedRouter.urlFor("user.login"));
+    }
+
+    // FIXED — _id will NEVER be null now
+    const payload = { id: user._id };
+
+    let token = jwt.sign(payload, config.auth.jwtSecret, {
+      expiresIn: config.auth.jwt_expiresin.toString(),
+    });
+
+    req.session.token = token;
+    req.user = user;
+
+    req.flash("success", "You have successfully logged in");
+    return res.redirect(namedRouter.urlFor("user.dashboard"));
+  } catch (e) {
+    console.log(e);
+    throw e;
+  }
+}
   /*  @Method: insert
         @Description: save User
    */

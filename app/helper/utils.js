@@ -251,31 +251,43 @@ let Utils = {
 		return (typeof value === 'string' && value) ? value : 'NA';
 	},
 
-	returnGreetings: async () => {
-		let setting_data = await settingRepo.getByField({});
-		// console.log(setting_data,"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-		const currentTime = moment().tz(setting_data.time_zone);
-		// console.log(currentTime);
+returnGreetings: async () => {
+    let setting_data = null;
 
-		const currentHour = currentTime.hours();
+    try {
+        setting_data = await settingRepo.getByField({});
+    } catch (e) {
+        console.error("Error fetching settings in returnGreetings:", e);
+    }
 
-		if (currentHour >= 5 && currentHour < 12) {
-			return {
-				greet: "Good morning 🌅",
-				greet_message: "Rise and shine, ready to conquer the day ahead. Make it count! 💪🌈"
-			}
-		} else if (currentHour >= 12 && currentHour < 18) {
-			return {
-				greet: "Good afternoon 🌤️",
-				greet_message: "Midday strides in with its own energy. Take a moment to recharge, and let the rest of the day unfold with positivity and productivity! "
-			}
-		} else {
-			return {
-				greet: "Good evening 🌙",
-				greet_message: "As the day gracefully retires, may your evening be a tranquil oasis of relaxation and joy."
-			}
-		}
-	},
+    // Fallback timezone if settings or time_zone is missing/invalid
+    const timezone =
+        (setting_data && setting_data.time_zone && setting_data.time_zone.trim()) ||
+        "America/New_York";   // or "UTC" if you prefer
+
+    const currentTime = moment().tz(timezone);
+    const currentHour = currentTime.hours();
+
+    if (currentHour >= 5 && currentHour < 12) {
+        return {
+            greet: "Good morning 🌅",
+            greet_message:
+                "Rise and shine, ready to conquer the day ahead. Make it count! 💪🌈",
+        };
+    } else if (currentHour >= 12 && currentHour < 18) {
+        return {
+            greet: "Good afternoon 🌤️",
+            greet_message:
+                "Midday strides in with its own energy. Take a moment to recharge, and let the rest of the day unfold with positivity and productivity!",
+        };
+    } else {
+        return {
+            greet: "Good evening 🌙",
+            greet_message:
+                "As the day gracefully retires, may your evening be a tranquil oasis of relaxation and joy.",
+        };
+    }
+},
 
 	getPaginatedData: async (page, limit, data, search) => {
 
