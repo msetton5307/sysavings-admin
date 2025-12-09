@@ -7,23 +7,18 @@ async function createSettings() {
   try {
     const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}/${process.env.DB_DATABASE}?retryWrites=true&w=majority&authSource=admin`;
 
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
+    await mongoose.connect(uri);
     console.log("Connected to MongoDB Atlas");
 
-    const existing = await Settings.findOne();
+    let settings = await Settings.findOne();
 
-    if (existing) {
+    if (settings) {
       console.log("Settings already exist:");
-      console.log(existing);
-      process.exit();
+      console.log(settings);
       return;
     }
 
-    const newSettings = await Settings.create({
+    settings = await Settings.create({
       contactNumber: "+1 (555) 123-4567",
       email: "support@sysaving.com",
       address: "New York, USA",
@@ -37,21 +32,22 @@ async function createSettings() {
         fb: "",
         twtr: "",
         insta: "",
-        lnkdn: ""
+        lnkdn: "",
       },
       notification: true,
       preferences: true,
       email_notifications: true,
       amountToPayCustomer: 0,
-      isDeleted: false
+      isDeleted: false,
     });
 
     console.log("Default settings created:");
-    console.log(newSettings);
-    process.exit();
+    console.log(settings);
   } catch (error) {
     console.error("Error creating settings:", error);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect();
   }
 }
 
