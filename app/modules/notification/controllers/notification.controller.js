@@ -11,7 +11,7 @@ const notificationHelper = require('../../../helper/notifications');
 class NotificationController {
   async compose(req, res) {
     try {
-      const deals = await DealRepo.getAllByField({ isDeleted: false, status: 'Approved' });
+      const deals = await DealRepo.getAllByField({ isDeleted: false });
 
       res.render('notification/views/send', {
         page_name: 'notification-management',
@@ -33,7 +33,7 @@ class NotificationController {
         return res.redirect(namedRouter.urlFor('admin.notification.compose'));
       }
 
-      const deal = await DealRepo.getByField({ _id: new mongoose.Types.ObjectId(dealId), isDeleted: false, status: 'Approved' });
+      const deal = await DealRepo.getByField({ _id: new mongoose.Types.ObjectId(dealId), isDeleted: false });
 
       if (!deal) {
         req.flash('error', 'Selected deal not found or inactive.');
