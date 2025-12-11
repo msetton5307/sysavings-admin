@@ -9,14 +9,15 @@ module.exports = {
 		project_name: "Sysaving",
 		project_description: "Basic Setup"
 	},
-	db: {
-		port: process.env.DB_PORT || 27117,
-		database: process.env.DB_DATABASE || 'basicAdminDb',
-		password: process.env.DB_PASSWORD || 'basicAdminPassword@123',
-		username: process.env.DB_USERNAME || 'developer',
-		host: process.env.DB_HOST || '104.211.217.29',
-		dialect: 'mongodb'
-	},
+        db: {
+                port: process.env.DB_PORT || 27117,
+                database: process.env.DB_DATABASE || 'basicAdminDb',
+                password: process.env.DB_PASSWORD || 'basicAdminPassword@123',
+                username: process.env.DB_USERNAME || 'developer',
+                host: process.env.DB_HOST || '104.211.217.29',
+                authSource: process.env.DB_AUTH_SOURCE || 'admin',
+                dialect: 'mongodb'
+        },
 	winiston: {
 		logpath: '/iLrnLogs/logs/',
 	},
