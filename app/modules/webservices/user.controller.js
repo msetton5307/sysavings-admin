@@ -36,6 +36,11 @@ class UserControllerApi {
 
             const user = new userModel()
             const userRole = await roleRepo.getByField({ role: "user" });
+
+            if (!userRole || !userRole._id) {
+                return requestHandler.throwError(500, 'Internal Server Error', 'User role is not configured')()
+            }
+
             req.body.role = userRole._id;
             const emailExists = await userRepo.getByField({ email: req.body.email, isDeleted: false });
             console.log(emailExists);
