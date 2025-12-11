@@ -1,6 +1,7 @@
 $(function () {
   ('use strict');
   var dtUserTable = $('.deal-list-table'),
+    dealTable,
     select = $('.select2'),
     statusObj = {
       'Approved': { title: 'Approved', class: 'badge-light-success' },
@@ -26,7 +27,9 @@ $(function () {
       $('#loader').css("display", "");
     }).on('draw.dt', function () {
       $('#loader').css("display", "none");
-    }).DataTable({
+    });
+
+    dealTable = dtUserTable.DataTable({
       processing: true,
       paging: true,
       sorting: true,
@@ -94,7 +97,19 @@ $(function () {
           orderable: true,
           searchable: false,
           render: function (data, type, full, meta) {
-            return '<div style="text-align: center;">' + full['deal_price'] + '</div>';
+            const salePrice = full['sale_price'] || full['deal_price'] || '';
+            const originalPrice = full['original_price'];
+            const discount = full['discount_text'];
+
+            let priceHtml = '<div class="fw-bold">' + (salePrice || 'N/A') + '</div>';
+            if (originalPrice) {
+              priceHtml += '<div class="text-muted text-decoration-line-through small">' + originalPrice + '</div>';
+            }
+            if (discount) {
+              priceHtml += '<div class="text-success small">' + discount + '</div>';
+            }
+
+            return '<div style="text-align: center;">' + priceHtml + '</div>';
           }
         },
         {
@@ -237,6 +252,33 @@ $(function () {
           });
 
       }
+    });
+  }
+
+  if (dtUserTable.length) {
+    dtUserTable.on('click', 'tbody tr', function () {
+      const rowData = dealTable.row(this).data();
+      if (!rowData) return;
+
+      const imageUrl = rowData.Image || rowData.image || rowData.imageUrl || '/uploads/noImage.png';
+      $('#deal-details-title').text(rowData.deal_title || 'N/A');
+      $('#deal-details-company').text(rowData.company || 'N/A');
+      $('#deal-details-type').text(rowData.mtype || 'N/A');
+      $('#deal-details-subtype').text(rowData.subtype || 'N/A');
+      $('#deal-details-price').text(rowData.sale_price || rowData.deal_price || 'N/A');
+      $('#deal-details-original').text(rowData.original_price || 'N/A');
+      $('#deal-details-discount').text(rowData.discount_text || 'N/A');
+
+      const link = rowData.product_link || '';
+      if (link) {
+        $('#deal-details-link').attr('href', link).text(link);
+      } else {
+        $('#deal-details-link').attr('href', '#').text('N/A');
+      }
+
+      $('#deal-details-image').attr('src', imageUrl);
+
+      $('#dealDetailsModal').modal('show');
     });
   }
 
