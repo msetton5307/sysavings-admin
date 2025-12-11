@@ -5,11 +5,17 @@ const _ = require("lodash")
 const userRepository = {
     findOneWithRole: async (params) => {
         try {
-            let user = await User.findOne({
-                email: params.email,
-                role: { $in: params.roles },
+            const email = params?.email?.trim().toLowerCase();
+            const query = {
+                email,
                 isDeleted: false
-            }).populate('role').exec();
+            };
+
+            if (Array.isArray(params?.roles) && params.roles.length) {
+                query.role = { $in: params.roles };
+            }
+
+            let user = await User.findOne(query).populate('role').exec();
 
             if (!user) {
                 throw {
