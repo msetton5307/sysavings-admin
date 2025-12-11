@@ -8,11 +8,22 @@ const DealRepo = require('../../deal/repositories/deal.repository');
 const notificationRepo = require('../repositories/notification.repository');
 const userRepo = require('../../user/repositories/user.repository');
 const notificationHelper = require('../../../helper/notifications');
+const axios = require('axios');
+
+const SYSAVINGS_API_BASE_URL = 'https://api.sysavings.com';
 
 class NotificationController {
   async compose(req, res) {
     try {
-      const deals = await DealRepo.getAllByField({ status: 'Approved', isDeleted: false });
+      const { data: responseData } = await axios.get(`${SYSAVINGS_API_BASE_URL}/api/mergeJSON/paginated`, {
+        params: { page: 1, limit: 100 },
+      });
+
+      const dealsFromApi = responseData?.data || responseData?.results || responseData || [];
+      const deals = (Array.isArray(dealsFromApi) ? dealsFromApi : []).map((item, index) => ({
+        _id: item._id || item.id || item.Id || item.ID || `1-${index}`,
+        deal_title: item.Name || item.title || item.deal_title || '',
+      }));
 
       res.render('notification/views/send', {
         page_name: 'notification-management',
