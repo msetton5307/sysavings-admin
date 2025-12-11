@@ -19,6 +19,18 @@ ADMIN_PASSWORD=Admin@123!
 ADMIN_NAME="Local Admin"
 ```
 
+Local connections are the default. If your MongoDB requires authentication or runs on a non-default host/port, set these environment variables in your `.env` file before running the seeder:
+
+```
+DB_HOST=127.0.0.1
+DB_PORT=27017
+DB_DATABASE=sysaving
+# Uncomment if your MongoDB uses authentication
+# DB_USERNAME=yourUser
+# DB_PASSWORD=yourPassword
+# DB_AUTH_SOURCE=admin
+```
+
 After running the command, log in at `/admin/login` with the credentials printed by the script.
 
 ## Add your files
