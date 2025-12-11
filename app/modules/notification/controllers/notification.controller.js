@@ -11,6 +11,16 @@ const userRepo = require('../../user/repositories/user.repository');
 const notificationHelper = require('../../../helper/notifications');
 const SYSAVINGS_API_BASE_URL = 'https://api.sysavings.com';
 class NotificationController {
+  constructor() {
+    this.compose = this.compose.bind(this);
+    this.broadcast = this.broadcast.bind(this);
+    this.getDealsForDropdown = this.getDealsForDropdown.bind(this);
+    this.getDealDetails = this.getDealDetails.bind(this);
+    this.findDealFromApi = this.findDealFromApi.bind(this);
+    this.fetchDealsFromApi = this.fetchDealsFromApi.bind(this);
+    this.normalizeApiDeal = this.normalizeApiDeal.bind(this);
+    this.buildImageUrl = this.buildImageUrl.bind(this);
+  }
   async compose(req, res) {
     try {
       const deals = await this.getDealsForDropdown();
