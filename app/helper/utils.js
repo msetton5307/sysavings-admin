@@ -252,12 +252,13 @@ let Utils = {
 	},
 
 	returnGreetings: async () => {
-		let setting_data = await settingRepo.getByField({});
-		// console.log(setting_data,"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-		const currentTime = moment().tz(setting_data.time_zone);
+                let setting_data = await settingRepo.getByField({});
+                // console.log(setting_data,"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+                const timeZone = (setting_data && setting_data.time_zone) ? setting_data.time_zone : moment.tz.guess();
+                const currentTime = timeZone ? moment().tz(timeZone) : moment();
 		// console.log(currentTime);
 
-		const currentHour = currentTime.hours();
+                const currentHour = typeof currentTime.hours === 'function' ? currentTime.hours() : moment().hours();
 
 		if (currentHour >= 5 && currentHour < 12) {
 			return {
