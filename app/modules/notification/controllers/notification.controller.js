@@ -114,22 +114,23 @@ class NotificationController {
     try {
       const { deal_id: dealId, title, message } = req.body;
 
-      if (!dealId || !title || !message) {
-        req.flash('error', 'Deal, title and message are required.');
+      if (!title || !message) {
+        req.flash('error', 'Title and message are required.');
         return res.redirect(namedRouter.urlFor('admin.notification.compose'));
       }
 
-      const deal = await this.getDealDetails(dealId);
+      const deal = dealId ? await this.getDealDetails(dealId) : null;
 
-      if (!deal) {
+      if (dealId && !deal) {
         req.flash('error', 'Selected deal not found or inactive.');
         return res.redirect(namedRouter.urlFor('admin.notification.compose'));
       }
 
-      const dealImages = deal._id && mongoose.Types.ObjectId.isValid(deal._id)
+      const dealImages = deal?.
+        _id && mongoose.Types.ObjectId.isValid(deal._id)
         ? await DealRepo.getAllByFieldImages({ deal_id: deal._id })
         : [];
-      const notificationImage = dealImages?.[0]?.image || deal.notification_image || '';
+      const notificationImage = dealImages?.[0]?.image || deal?.notification_image || '';
 
       const users = await userRepo.getAllByField({ isDeleted: false, status: 'Active' });
 
@@ -140,11 +141,11 @@ class NotificationController {
 
       for (const targetUser of users) {
         const notificationData = {
-          ...(deal._id && mongoose.Types.ObjectId.isValid(deal._id) ? { reference_user_id: deal._id } : {}),
+          ...(deal?._id && mongoose.Types.ObjectId.isValid(deal._id) ? { reference_user_id: deal._id } : {}),
           target_user_id: targetUser._id,
           notification_title: title,
           notification_message: message,
-          notification_description: `Deal: ${deal.deal_title || 'Selected deal'}`,
+          notification_description: deal ? `Deal: ${deal.deal_title || 'Selected deal'}` : '',
           notification_image: notificationImage,
           isWeb: true,
         };
@@ -154,7 +155,7 @@ class NotificationController {
         if (targetUser.device_token && targetUser.notifications === true) {
           const pushData = {};
 
-          if (deal._id) {
+          if (deal?._id) {
             pushData.dealId = String(deal._id);
           }
 

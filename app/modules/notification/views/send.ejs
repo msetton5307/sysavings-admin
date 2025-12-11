@@ -29,14 +29,13 @@
               <form class="needs-validation" novalidate id="notificationBroadcastForm" action="<%= generateUrl('admin.notification.send') %>" method="POST">
                 <div class="row">
                   <div class="col-12 col-md-6 mb-1">
-                    <label class="form-label" for="deal_id">Deal</label><span style="color: red;">*</span>
-                    <select class="form-select" id="deal_id" name="deal_id" required>
-                      <option value="" disabled selected>Select deal</option>
+                    <label class="form-label" for="deal_id">Deal (optional)</label>
+                    <select class="form-select" id="deal_id" name="deal_id">
+                      <option value="" selected>Select deal (optional)</option>
                       <% deals.forEach(function(deal){ %>
                         <option value="<%= deal._id %>"><%= deal.deal_title %></option>
                       <% }) %>
                     </select>
-                    <div class="invalid-feedback">Please select a deal.</div>
                   </div>
                   <div class="col-12 col-md-6 mb-1">
                     <label class="form-label" for="title">Notification Title</label><span style="color: red;">*</span>
@@ -69,10 +68,10 @@
     const form = document.getElementById('notificationBroadcastForm');
     const dealSelect = $('#deal_id');
 
-    dealSelect.select2({
-      placeholder: 'Select deal',
-      allowClear: true,
-    });
+      dealSelect.select2({
+        placeholder: 'Select deal (optional)',
+        allowClear: true,
+      });
 
     form.addEventListener('submit', function (event) {
       if (!form.checkValidity()) {
