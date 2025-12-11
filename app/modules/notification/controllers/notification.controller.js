@@ -3,18 +3,17 @@ const routeLabel = require('route-label');
 const router = express.Router();
 const namedRouter = routeLabel(router);
 const mongoose = require('mongoose');
+const axios = require('axios');
 
 const DealRepo = require('../../deal/repositories/deal.repository');
 const notificationRepo = require('../repositories/notification.repository');
 const userRepo = require('../../user/repositories/user.repository');
 const notificationHelper = require('../../../helper/notifications');
+const SYSAVINGS_API_BASE_URL = 'https://api.sysavings.com';
 class NotificationController {
   async compose(req, res) {
     try {
-      // Include every deal that is available in deal management (even if the
-      // isDeleted flag is missing/null) so the notification dropdown always
-      // shows the full list.
-      const deals = await DealRepo.getAllByField({ isDeleted: { $ne: true } });
+      const deals = await this.getDealsForDropdown();
 
       res.render('notification/views/send', {
         page_name: 'notification-management',
@@ -27,6 +26,80 @@ class NotificationController {
     }
   }
 
+  async getDealsForDropdown() {
+    try {
+      const normalizedDeals = await this.fetchDealsFromApi();
+
+      if (normalizedDeals.length) {
+        return normalizedDeals;
+      }
+    } catch (error) {
+      // Fall back to DB deals if the external API is unavailable.
+    }
+
+    // Include every deal that is available in deal management (even if the
+    // isDeleted flag is missing/null) so the notification dropdown always
+    // shows the full list.
+    return DealRepo.getAllByField({ isDeleted: { $ne: true } });
+  }
+
+  async getDealDetails(dealId) {
+    let deal = null;
+
+    if (dealId && mongoose.Types.ObjectId.isValid(dealId)) {
+      deal = await DealRepo.getByField({ _id: new mongoose.Types.ObjectId(dealId), isDeleted: false });
+      if (deal) {
+        return deal;
+      }
+    }
+
+    const apiDeal = await this.findDealFromApi(dealId);
+
+    if (apiDeal) {
+      return apiDeal;
+    }
+
+    return null;
+  }
+
+  async findDealFromApi(dealId) {
+    if (!dealId) {
+      return null;
+    }
+
+    try {
+      const deals = await this.fetchDealsFromApi();
+      return deals.find((item) => String(item._id) === String(dealId)) || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async fetchDealsFromApi(limit = 1000) {
+    const { data: responseData } = await axios.get(`${SYSAVINGS_API_BASE_URL}/api/mergeJSON/paginated`, {
+      params: { page: 1, limit },
+    });
+
+    const dealsFromApi = responseData?.data || responseData?.results || responseData;
+    const apiDeals = Array.isArray(dealsFromApi) ? dealsFromApi : [];
+
+    return apiDeals.map((item, index) => this.normalizeApiDeal(item, index));
+  }
+
+  normalizeApiDeal(item, index) {
+    return {
+      _id: item._id || item.id || item.Id || item.ID || `${index}`,
+      deal_title: item.Name || item.title || item.deal_title || 'Untitled Deal',
+      notification_image: this.buildImageUrl(item.Image || item.image || item.imageUrl),
+    };
+  }
+
+  buildImageUrl(path) {
+    if (!path) return '';
+    if (/^https?:\/\//i.test(path)) return path;
+    return `${SYSAVINGS_API_BASE_URL}${path}`;
+  }
+
   async broadcast(req, res) {
     try {
       const { deal_id: dealId, title, message } = req.body;
@@ -36,15 +109,17 @@ class NotificationController {
         return res.redirect(namedRouter.urlFor('admin.notification.compose'));
       }
 
-      const deal = await DealRepo.getByField({ _id: new mongoose.Types.ObjectId(dealId), isDeleted: false });
+      const deal = await this.getDealDetails(dealId);
 
       if (!deal) {
         req.flash('error', 'Selected deal not found or inactive.');
         return res.redirect(namedRouter.urlFor('admin.notification.compose'));
       }
 
-      const dealImages = await DealRepo.getAllByFieldImages({ deal_id: deal._id });
-      const notificationImage = dealImages?.[0]?.image || '';
+      const dealImages = deal._id && mongoose.Types.ObjectId.isValid(deal._id)
+        ? await DealRepo.getAllByFieldImages({ deal_id: deal._id })
+        : [];
+      const notificationImage = dealImages?.[0]?.image || deal.notification_image || '';
 
       const users = await userRepo.getAllByField({ isDeleted: false, status: 'Active' });
 
@@ -55,11 +130,11 @@ class NotificationController {
 
       for (const targetUser of users) {
         const notificationData = {
-          reference_user_id: deal._id,
+          ...(deal._id && mongoose.Types.ObjectId.isValid(deal._id) ? { reference_user_id: deal._id } : {}),
           target_user_id: targetUser._id,
           notification_title: title,
           notification_message: message,
-          notification_description: `Deal: ${deal.deal_title}`,
+          notification_description: `Deal: ${deal.deal_title || 'Selected deal'}`,
           notification_image: notificationImage,
           isWeb: true,
         };
@@ -67,6 +142,12 @@ class NotificationController {
         await notificationRepo.save(notificationData);
 
         if (targetUser.device_token && targetUser.notifications === true) {
+          const pushData = {};
+
+          if (deal._id) {
+            pushData.dealId = String(deal._id);
+          }
+
           const pushPayload = {
             token: targetUser.device_token,
             notification: {
@@ -74,9 +155,7 @@ class NotificationController {
               body: message,
               image: notificationImage,
             },
-            data: {
-              dealId: String(deal._id),
-            },
+            data: pushData,
           };
 
           await notificationHelper.pushNotification(pushPayload);
