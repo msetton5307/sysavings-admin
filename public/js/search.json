@@ -1,0 +1,19 @@
+{
+  "listItems": [
+    { "name": "Dashboard", "url": "/dashboard", "icon": "home" },
+    { "name": "App Settings", "url": "/settings/edit", "icon": "tool" },
+    { "name": "App Settings", "url": "/settings/edit", "icon": "tool" },
+    { "name": "CMS Management", "url": "/cms/list", "icon": "circle" },
+    { "name": "FAQ Management", "url": "/faq/list", "icon": "help-circle" },
+    { "name": "Brand Management", "url": "/brand/list", "icon": "codesandbox" },
+    { "name": "Report Management", "url": "/report/list", "icon": "phone-call" },
+    { "name": "Query Management", "url": "/query/list", "icon": "search" },
+    { "name": "Membership Plan Management", "url": "/membership-plan/list", "icon": "search" },
+    { "name": "Testimonial Management", "url": "/testimonial/list", "icon": "search" },
+    { "name": "User Management", "url": "/user/listing", "icon": "user" },
+    { "name": "Service Provider Management", "url": "/service-provider/listing", "icon": "user" },
+    { "name": "Booking Management", "url": "/booking/list", "icon": "database" },
+    { "name": "Payment Management", "url": "/transaction/list", "icon": "dollar-sign" }
+
+  ]
+}
