@@ -565,7 +565,21 @@ class UserControllerApi {
                 requestHandler.throwError(400, 'Bad Request', 'Refresh token is required!')();
             }
 
-            const decoded = jwt.verify(req.body.refresh_token, process.env.REFRESH_TOKEN_SECRET)
+            const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
+
+            if (!refreshSecret || _.isEmpty(refreshSecret.trim())) {
+                requestHandler.throwError(500, 'Server Error', 'Refresh token secret is not configured!')();
+            }
+
+            let decoded;
+
+            try {
+                decoded = jwt.verify(req.body.refresh_token, refreshSecret);
+            } catch (error) {
+                const statusCode = error.name === 'TokenExpiredError' ? 401 : 400;
+                const message = error.name === 'TokenExpiredError' ? 'Refresh token has expired!' : 'Invalid refresh token!';
+                requestHandler.throwError(statusCode, 'Bad Request', message)();
+            }
             const is_token_valid = await refreshTokenRepo.getByField({ user_id: decoded.params.id, refresh_token: req.body.refresh_token });
             if (_.isEmpty(is_token_valid)) {
                 requestHandler.throwError(400, 'Bad Request', 'Invalid refresh token!')();
