@@ -8,9 +8,9 @@ module.exports = async () => {
   const host = process.env.DB_HOST || dbConfig?.host || 'localhost';
   const port = process.env.DB_PORT || dbConfig?.port || 27017;
   const database = process.env.DB_DATABASE || dbConfig?.database || 'admin';
-  const username = process.env.DB_USERNAME || dbConfig?.username;
-  const password = process.env.DB_PASSWORD || dbConfig?.password;
-  const authSource = process.env.DB_AUTH_SOURCE || dbConfig?.authSource;
+  const username = process.env.DB_USERNAME ?? dbConfig?.username;
+  const password = process.env.DB_PASSWORD ?? dbConfig?.password;
+  const authSource = process.env.DB_AUTH_SOURCE ?? dbConfig?.authSource;
 
   const credentials = username && password ? `${encodeURIComponent(username)}:${encodeURIComponent(password)}@` : '';
   const query = authSource ? `?authSource=${encodeURIComponent(authSource)}` : '';
