@@ -10,9 +10,11 @@ module.exports = async () => {
   const database = process.env.DB_DATABASE || dbConfig?.database || 'admin';
   const username = process.env.DB_USERNAME || dbConfig?.username;
   const password = process.env.DB_PASSWORD || dbConfig?.password;
+  const authSource = process.env.DB_AUTH_SOURCE || dbConfig?.authSource;
 
   const credentials = username && password ? `${encodeURIComponent(username)}:${encodeURIComponent(password)}@` : '';
-  const url = `mongodb://${credentials}${host}:${port}/${database}`;
+  const query = authSource ? `?authSource=${encodeURIComponent(authSource)}` : '';
+  const url = `mongodb://${credentials}${host}:${port}/${database}${query}`;
 
   try {
     const options = credentials
@@ -20,8 +22,11 @@ module.exports = async () => {
           auth: {
             username,
             password
-          }
+          },
+          ...(authSource ? { authSource } : {})
         }
+      : authSource
+      ? { authSource }
       : {};
 
     const db = await mongoose.connect(url, options);
