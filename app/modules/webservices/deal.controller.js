@@ -16,7 +16,7 @@ const logger = new Logger();
 const RequestHandler = require(appRoot + '/helper/RequestHandler');
 const requestHandler = new RequestHandler(logger);
 const axios = require("axios");
-const { getPaginatedData } = require('../../helper/utils')
+const SYSAVINGS_API_BASE_URL = 'https://api.sysavings.com';
 // response helper
 
 class DealControllerApi {
@@ -328,21 +328,37 @@ class DealControllerApi {
 
     async getDealByJSON(req, res) {
         try {
-            console.log("hitttttt");
+            const page = Number(req.body.page) || 1;
+            const limit = Number(req.body.limit) || 10;
+            const searchTerm = req.body.search && req.body.search.trim() !== "" ? req.body.search.trim() : null;
 
-            const response = await axios.get('https://api.sysavings.com/api/mergeJSON');
-            console.log("response: ", response);
+            const { data: responseData } = await axios.get(`${SYSAVINGS_API_BASE_URL}/api/mergeJSON/paginated`, {
+                params: { page, limit }
+            });
 
-            let search = req.body.search && req.body.search.trim() !== "" ? new RegExp(req.body.search, 'i') : null;
+            const dealsFromApi = responseData?.data || responseData?.results || responseData;
+            const deals = Array.isArray(dealsFromApi) ? dealsFromApi : [];
+            const searchRegex = searchTerm ? new RegExp(searchTerm, 'i') : null;
 
-            const data = search ? response.data.filter((item) => search.test(item.Name)) : response.data;
+            const filteredDeals = searchRegex ? deals.filter((item) => searchRegex.test(item.Name)) : deals;
 
-            let result = await getPaginatedData(req.body.page, req.body.limit, data, search);
+            const buildImageUrl = (path) => {
+                if (!path) return path;
+                if (/^https?:\/\//i.test(path)) return path;
+                return `${SYSAVINGS_API_BASE_URL}${path}`;
+            };
+
+            const dealsWithImages = filteredDeals.map((item) => ({
+                ...item,
+                Image: buildImageUrl(item.Image),
+                image: buildImageUrl(item.image),
+                imageUrl: buildImageUrl(item.imageUrl)
+            }));
 
             return requestHandler.sendSuccess(res, 'Deal Listing Fetched Successfully')({
-                page: req.body.page,
-                length: req.body.limit,
-                data: result
+                page,
+                length: limit,
+                data: dealsWithImages
             });
 
         } catch (err) {
