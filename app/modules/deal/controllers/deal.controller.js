@@ -14,6 +14,8 @@ const mongoose = require("mongoose");
 const stripe = require("../../../helper/stripe")
 const CategoryRepository = require("../../category/repositories/category.repository");
 const _ = require("lodash")
+const axios = require("axios");
+const SYSAVINGS_API_BASE_URL = 'https://api.sysavings.com';
 class DealController {
   constructor() { }
 
@@ -141,17 +143,48 @@ class DealController {
     try {
       let start = parseInt(req.body.start);
       let length = parseInt(req.body.length);
+      start = Number.isNaN(start) ? 0 : start;
+      length = Number.isNaN(length) ? 10 : length;
       let currentPage = 1;
       if (start > 0) {
         currentPage = parseInt((start + length) / length);
       }
       req.body.page = currentPage;
-      let deal = await DealRepo.getAll(req);
+      const searchTerm = req.body.search && req.body.search.value ? req.body.search.value.trim() : '';
+
+      const { data: responseData } = await axios.get(`${SYSAVINGS_API_BASE_URL}/api/mergeJSON/paginated`, {
+        params: { page: currentPage, limit: length }
+      });
+
+      const dealsFromApi = responseData?.data || responseData?.results || responseData;
+      const deals = Array.isArray(dealsFromApi) ? dealsFromApi : [];
+      const searchRegex = searchTerm ? new RegExp(searchTerm, 'i') : null;
+
+      const buildImageUrl = (path) => {
+        if (!path) return path;
+        if (/^https?:\/\//i.test(path)) return path;
+        return `${SYSAVINGS_API_BASE_URL}${path}`;
+      };
+
+      const normalizedDeals = deals.map((item, index) => ({
+        _id: item._id || item.id || item.Id || item.ID || `${currentPage}-${index}`,
+        deal_title: item.Name || item.title || item.deal_title || '',
+        deal_price: item.Price || item.price || item.deal_price || '',
+        product_link: item.URL || item.url || item.product_link || '',
+        status: item.status || 'Approved',
+        Image: buildImageUrl(item.Image),
+        image: buildImageUrl(item.image),
+        imageUrl: buildImageUrl(item.imageUrl)
+      }));
+
+      const filteredDeals = searchRegex ? normalizedDeals.filter((item) => searchRegex.test(item.deal_title)) : normalizedDeals;
+
+      const totalRecords = Number(responseData?.total || responseData?.totalCount || responseData?.count || deals.length);
 
       let data = {
-        recordsTotal: deal.total,
-        recordsFiltered: deal.total,
-        data: deal.docs,
+        recordsTotal: totalRecords,
+        recordsFiltered: searchRegex ? filteredDeals.length : totalRecords,
+        data: filteredDeals,
       };
       return {
         status: 200,
