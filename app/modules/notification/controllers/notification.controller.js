@@ -11,7 +11,10 @@ const notificationHelper = require('../../../helper/notifications');
 class NotificationController {
   async compose(req, res) {
     try {
-      const deals = await DealRepo.getAllByField({ isDeleted: false });
+      // Include every deal that is available in deal management (even if the
+      // isDeleted flag is missing/null) so the notification dropdown always
+      // shows the full list.
+      const deals = await DealRepo.getAllByField({ isDeleted: { $ne: true } });
 
       res.render('notification/views/send', {
         page_name: 'notification-management',
