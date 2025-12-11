@@ -166,16 +166,29 @@ class DealController {
         return `${SYSAVINGS_API_BASE_URL}${path}`;
       };
 
-      const normalizedDeals = deals.map((item, index) => ({
-        _id: item._id || item.id || item.Id || item.ID || `${currentPage}-${index}`,
-        deal_title: item.Name || item.title || item.deal_title || '',
-        deal_price: item.Price || item.price || item.deal_price || '',
-        product_link: item.URL || item.url || item.product_link || '',
-        status: item.status || 'Approved',
-        Image: buildImageUrl(item.Image),
-        image: buildImageUrl(item.image),
-        imageUrl: buildImageUrl(item.imageUrl)
-      }));
+      const normalizedDeals = deals.map((item, index) => {
+        const dealTitle = item.Name || item.title || item.deal_title || '';
+        const salePrice = item.Price1 || item.Price || item.price || item.deal_price || item.Price2 || '';
+        const originalPrice = item.Price2 || item.originalPrice || '';
+        const productLink = item.URL || item.Url || item.url || item.product_link || item.productLink || '';
+
+        return {
+          _id: item._id || item.id || item.Id || item.ID || `${currentPage}-${index}`,
+          deal_title: dealTitle,
+          deal_price: salePrice,
+          sale_price: salePrice,
+          original_price: originalPrice,
+          discount_text: item.Off || item.off || item.discount || '',
+          product_link: productLink,
+          company: item.Company || item.company || '',
+          mtype: item.Mtype || item.MType || item.type || '',
+          subtype: item.Subtype || item.subType || item.subtype || '',
+          status: item.status || 'Approved',
+          Image: buildImageUrl(item.Image),
+          image: buildImageUrl(item.image),
+          imageUrl: buildImageUrl(item.imageUrl)
+        };
+      });
 
       const filteredDeals = searchRegex ? normalizedDeals.filter((item) => searchRegex.test(item.deal_title)) : normalizedDeals;
 

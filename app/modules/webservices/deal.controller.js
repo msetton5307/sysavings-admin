@@ -348,12 +348,29 @@ class DealControllerApi {
                 return `${SYSAVINGS_API_BASE_URL}${path}`;
             };
 
-            const dealsWithImages = filteredDeals.map((item) => ({
-                ...item,
-                Image: buildImageUrl(item.Image),
-                image: buildImageUrl(item.image),
-                imageUrl: buildImageUrl(item.imageUrl)
-            }));
+            const dealsWithImages = filteredDeals.map((item, index) => {
+                const dealTitle = item.Name || item.title || item.deal_title || '';
+                const salePrice = item.Price1 || item.Price || item.price || item.deal_price || item.Price2 || '';
+                const originalPrice = item.Price2 || item.originalPrice || '';
+                const productLink = item.URL || item.Url || item.url || item.product_link || item.productLink || '';
+
+                return {
+                    ...item,
+                    _id: item._id || item.id || item.Id || item.ID || `${page}-${index}`,
+                    Name: dealTitle || item.Name,
+                    Price: salePrice || item.Price,
+                    Price1: item.Price1 || salePrice,
+                    Price2: item.Price2 || originalPrice,
+                    Off: item.Off || item.off || item.discount || '',
+                    Url: productLink || item.Url,
+                    Company: item.Company || item.company || '',
+                    Mtype: item.Mtype || item.MType || item.type || '',
+                    Subtype: item.Subtype || item.subType || item.subtype || '',
+                    Image: buildImageUrl(item.Image),
+                    image: buildImageUrl(item.image),
+                    imageUrl: buildImageUrl(item.imageUrl)
+                };
+            });
 
             return requestHandler.sendSuccess(res, 'Deal Listing Fetched Successfully')({
                 page,
