@@ -85,6 +85,12 @@
                     <span class="menu-item text-truncate" data-i18n="Payment">Payment Management</span>
                 </a>
             </li>
+            <li class="<%=(page_name == 'notification-management') ? 'active' : ''%> nav-item">
+                <a class="d-flex align-items-center" href="<%= generateUrl('admin.notification.compose') %>">
+                    <i data-feather="bell"></i>
+                    <span class="menu-item text-truncate" data-i18n="Notifications">Notifications</span>
+                </a>
+            </li>
             <li class="<%=(page_name == 'transaction-management') ? 'active' : ''%> nav-item">
                 <a class="d-flex align-items-center" href="<%= generateUrl('admin.transaction.listing') %>">
                     <i data-feather="dollar-sign"></i>
