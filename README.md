@@ -2,11 +2,24 @@
 
 
 
-## Getting started
+## Local admin setup
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+Use the provided seeder to create or update a backend admin user in your local MongoDB instance. The script also ensures the required `backend` role exists.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+```
+# Ensure your .env has DB_* values set for your local MongoDB
+npm run seed:admin
+```
+
+You can override the default credentials with environment variables:
+
+```
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=Admin@123!
+ADMIN_NAME="Local Admin"
+```
+
+After running the command, log in at `/admin/login` with the credentials printed by the script.
 
 ## Add your files
 

@@ -5,7 +5,8 @@
     "main": "sysaving.js",
     "scripts": {
         "start": "nodemon sysaving.js",
-        "dev": "NODE_ENV=dev npx nodemon sysaving.js"
+        "dev": "NODE_ENV=dev npx nodemon sysaving.js",
+        "seed:admin": "node scripts/seed-admin.js"
     },
     "engines": {
         "node": ">=14.x",
