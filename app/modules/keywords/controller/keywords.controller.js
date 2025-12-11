@@ -148,10 +148,20 @@ class KeywordController {
    */
   async renderEditpage(req, res) {
     try {
+      if (!mongoose.isValidObjectId(req.params.id)) {
+        req.flash("error", "Invalid keyword identifier provided");
+        return res.redirect(namedRouter.urlFor("admin.keyword.listing"));
+      }
+
       const getData = await keywordRepo.getByField({
         _id: new mongoose.Types.ObjectId(req.params.id),
         isDeleted: false,
       });
+
+      if (_.isEmpty(getData)) {
+        req.flash("error", "Keyword not found");
+        return res.redirect(namedRouter.urlFor("admin.keyword.listing"));
+      }
 
       const category = await CategoryRepository.getAllByField({
         parentId: { $eq: null },
