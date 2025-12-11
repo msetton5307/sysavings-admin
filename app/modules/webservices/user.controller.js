@@ -565,33 +565,44 @@ class UserControllerApi {
                 requestHandler.throwError(400, 'Bad Request', 'Refresh token is required!')();
             }
 
+            const providedRefreshToken = req.body.refresh_token.trim();
+
+            const existingRefreshToken = await refreshTokenRepo.getByField({ refresh_token: providedRefreshToken });
+            if (_.isEmpty(existingRefreshToken)) {
+                requestHandler.throwError(400, 'Bad Request', 'Invalid refresh token!')();
+            }
+
+            if (existingRefreshToken.expiry_date && moment().isAfter(existingRefreshToken.expiry_date)) {
+                await refreshTokenRepo.deleteOne({ _id: existingRefreshToken._id });
+                requestHandler.throwError(401, 'Bad Request', 'Refresh token has expired!')();
+            }
+
             const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
 
             if (!refreshSecret || _.isEmpty(refreshSecret.trim())) {
                 requestHandler.throwError(500, 'Server Error', 'Refresh token secret is not configured!')();
             }
 
-            let decoded;
-
-            try {
-                decoded = jwt.verify(req.body.refresh_token, refreshSecret);
-            } catch (error) {
-                const statusCode = error.name === 'TokenExpiredError' ? 401 : 400;
-                const message = error.name === 'TokenExpiredError' ? 'Refresh token has expired!' : 'Invalid refresh token!';
-                requestHandler.throwError(statusCode, 'Bad Request', message)();
+            if (providedRefreshToken.split('.').length === 3) {
+                try {
+                    const decoded = jwt.verify(providedRefreshToken, refreshSecret);
+                    if (_.get(decoded, 'params.id') && decoded.params.id.toString() !== existingRefreshToken.user_id.toString()) {
+                        requestHandler.throwError(400, 'Bad Request', 'Invalid refresh token!')();
+                    }
+                } catch (error) {
+                    const statusCode = error.name === 'TokenExpiredError' ? 401 : 400;
+                    const message = error.name === 'TokenExpiredError' ? 'Refresh token has expired!' : 'Invalid refresh token!';
+                    requestHandler.throwError(statusCode, 'Bad Request', message)();
+                }
             }
-            const is_token_valid = await refreshTokenRepo.getByField({ user_id: decoded.params.id, refresh_token: req.body.refresh_token });
-            if (_.isEmpty(is_token_valid)) {
-                requestHandler.throwError(400, 'Bad Request', 'Invalid refresh token!')();
-            }
 
-            const payload = { id: decoded.params.id }
+            const payload = { id: existingRefreshToken.user_id }
 
             let token = jwt.sign(payload, config.auth.jwtSecret, {
                 expiresIn: process.env.JWT_EXPIRES_IN, // token expiration time
             });
 
-            let refresh_token = await helper.updateRefreshToken(payload, is_token_valid._id);
+            let refresh_token = await helper.updateRefreshToken(payload, existingRefreshToken._id);
 
             if (!refresh_token) {
                 requestHandler.throwError(400, 'Bad Request', 'Refresh token is not generated, something went wrong!')();
