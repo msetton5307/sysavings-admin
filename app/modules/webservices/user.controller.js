@@ -632,7 +632,9 @@ class UserControllerApi {
 
     async socialSignupSignin(req, res) {
         try {
-            const { email, socialId, registerType, deviceToken, deviceType } = req.body;
+            const { email, socialId, registerType } = req.body;
+            const deviceToken = req.body.deviceToken || req.body.device_token;
+            const deviceType = req.body.deviceType || req.body.device_type;
 
             if (!email || !socialId || !registerType) {
                 return requestHandler.throwError(400, 'Bad Request', 'Missing required fields: email, socialId, or registerType')();
@@ -664,7 +666,7 @@ class UserControllerApi {
                 // Update device info if provided
                 if (deviceToken && deviceType) {
                     await userRepo.updateById(
-                        { deviceToken, deviceType },
+                        { device_token: deviceToken, device_type: deviceType },
                         existingUser._id
                     );
                 }
@@ -697,6 +699,14 @@ class UserControllerApi {
                     socialId,
                     registerType
                 };
+
+                if (deviceToken) {
+                    newUserData.device_token = deviceToken;
+                }
+
+                if (deviceType) {
+                    newUserData.device_type = deviceType;
+                }
 
                 // Remove password if present (should not be used for social login)
                 if (newUserData.password) delete newUserData.password;
