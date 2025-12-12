@@ -640,25 +640,23 @@ class UserControllerApi {
                 return requestHandler.throwError(400, 'Bad Request', 'Missing required fields: email, socialId, or registerType')();
             }
 
+            const normalizedRegisterType =
+                registerType.charAt(0).toUpperCase() + registerType.slice(1).toLowerCase();
+
             const validRegisterTypes = ['Google', 'Apple'];
-            if (!validRegisterTypes.includes(registerType)) {
+            if (!validRegisterTypes.includes(normalizedRegisterType)) {
                 return requestHandler.throwError(400, 'Bad Request', 'Please provide a valid social account type!')();
             }
             const normalizedEmail = email.trim().toLowerCase();
 
-            const emailExists = await userRepo.getByField({
-                email: normalizedEmail,
-                isDeleted: false,
-                registerType: { $ne: registerType }
-            });
-            if (emailExists && !_.isEmpty(emailExists)) {
-                return requestHandler.throwError(403, 'Forbidden', 'Account already exists for this email using another method!')();
-            }
-
-            // Check if user exists with socialId and registerType
             const existingUser = await userRepo.getByField({
                 socialId: socialId,
-                registerType: registerType,
+                registerType: normalizedRegisterType,
+                isDeleted: false
+            });
+
+            const emailMatchUser = await userRepo.getByField({
+                email: normalizedEmail,
                 isDeleted: false
             });
 
@@ -679,10 +677,24 @@ class UserControllerApi {
                 // Fetch user details and send success response
                 const userDetails = await userRepo.getUserDetails({ _id: existingUser._id });
 
-                return requestHandler.sendSuccess(res, 'Logged in successfully.')(
-                    userDetails[0],
-                    { token, refresh_token }
-                );
+                return requestHandler.sendSuccess(res, 'Logged in successfully.')(userDetails[0], { token, refresh_token });
+            } else if (emailMatchUser && emailMatchUser._id) {
+                const payload = { id: emailMatchUser._id };
+                const token = jwt.sign(payload, config.auth.jwtSecret, { expiresIn: config.auth.jwt_expiresin });
+                const refresh_token = await helper.createRefreshToken(payload);
+
+                const updateData = { socialId, registerType: normalizedRegisterType };
+
+                if (deviceToken && deviceType) {
+                    updateData.device_token = deviceToken;
+                    updateData.device_type = deviceType;
+                }
+
+                await userRepo.updateById(updateData, emailMatchUser._id);
+
+                const userDetails = await userRepo.getUserDetails({ _id: emailMatchUser._id });
+
+                return requestHandler.sendSuccess(res, 'Logged in successfully.')(userDetails[0], { token, refresh_token });
             } else {
                 // New user signup
                 const userRole = await roleRepo.getByField({ role: 'user' });
@@ -697,7 +709,7 @@ class UserControllerApi {
                     registrationCompleted: true,
                     isEmailVerified: true,
                     socialId,
-                    registerType
+                    registerType: normalizedRegisterType
                 };
 
                 if (deviceToken) {
