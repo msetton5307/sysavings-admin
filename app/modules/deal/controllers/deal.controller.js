@@ -255,6 +255,28 @@ class DealController {
     return `${parts.weekday} ${parts.month} ${parts.day} ${parts.year} ${parts.hour}:${parts.minute}:${parts.second} GMT-5`;
   }
 
+  formatPriceStringToNumber(value) {
+    if (_.isNil(value)) {
+      return null;
+    }
+
+    const numericValue = Number.parseFloat(String(value).replace(/[^0-9.]/g, ""));
+    return Number.isFinite(numericValue) ? numericValue : null;
+  }
+
+  formatUsdPrice(amount) {
+    return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "";
+  }
+
+  calculatePercentOff(currentPrice, oldPrice, fallbackOff = null) {
+    if (Number.isFinite(oldPrice) && Number.isFinite(currentPrice) && oldPrice > currentPrice) {
+      return Math.round(((oldPrice - currentPrice) / oldPrice) * 100);
+    }
+
+    const parsedFallback = Number.parseFloat(fallbackOff);
+    return Number.isFinite(parsedFallback) ? Math.round(parsedFallback) : fallbackOff || null;
+  }
+
   async postDealFromAmazon(req, res) {
     try {
       const { amazonUrl } = req.body;
@@ -273,14 +295,27 @@ class DealController {
 
       const itemDetails = await amazonHelper.fetchItemDetailsByAsin(asin);
       const createdAt = this.formatCreatedAtEastern();
+      const currentPriceNumber = this.formatPriceStringToNumber(itemDetails?.price1);
+      const oldPriceNumber = this.formatPriceStringToNumber(itemDetails?.price2);
+
+      let currentPrice = currentPriceNumber;
+      let oldPrice = oldPriceNumber;
+
+      if (Number.isFinite(oldPrice) && Number.isFinite(currentPrice) && oldPrice < currentPrice) {
+        [currentPrice, oldPrice] = [oldPrice, currentPrice];
+      }
+
+      const formattedPrice1 = this.formatUsdPrice(currentPrice);
+      const formattedPrice2 = this.formatUsdPrice(oldPrice);
+      const percentOff = this.calculatePercentOff(currentPrice, oldPrice, itemDetails?.off);
       const webhookPayload = {
         Company: "Amazon",
         Image: itemDetails?.image || "",
         Mtype: "Electronics and Technology",
         Name: itemDetails?.title || "",
-        Off: typeof itemDetails?.off === "number" ? itemDetails.off : itemDetails?.off || "",
-        Price1: itemDetails?.price1 || "",
-        Price2: itemDetails?.price2 || "",
+        Off: typeof percentOff === "number" ? percentOff : percentOff || "",
+        Price1: formattedPrice1,
+        Price2: formattedPrice2,
         Subtype: "Televisions",
         Url: itemDetails?.url || amazonUrl,
         createdAt,
