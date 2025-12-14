@@ -28,6 +28,9 @@ namedRouter.all('/deal*', auth.authenticate);
 
 namedRouter.get("admin.deal.listing", '/deal/list', DealController.list);
 
+namedRouter.get("deal.post.form", '/deal/post', DealController.renderPostDealPage);
+namedRouter.post("deal.post.submit", '/deal/post', request_param.any(), DealController.postDealFromAmazon);
+
 namedRouter.post("deal.getall", '/deal/getall', async (req, res) => {
   try {
     const success = await DealController.getAll(req, res);

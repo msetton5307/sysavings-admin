@@ -16,6 +16,7 @@ const CategoryRepository = require("../../category/repositories/category.reposit
 const _ = require("lodash")
 const axios = require("axios");
 const SYSAVINGS_API_BASE_URL = 'https://api.sysavings.com';
+const amazonHelper = require("../../../helper/amazon");
 class DealController {
   constructor() { }
 
@@ -214,6 +215,66 @@ class DealController {
    * @Method renderAddFaqPage
    * @Description to render add Deal page
    */
+
+  async renderPostDealPage(req, res) {
+    try {
+      res.render("deal/views/post-deal", {
+        page_name: "post-deal",
+        page_title: "Post Deal",
+        user: req.user,
+        dealInfo: null,
+        errorMessage: null,
+      });
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  }
+
+  async postDealFromAmazon(req, res) {
+    try {
+      const { amazonUrl } = req.body;
+      const asin = await amazonHelper.extractAsinFromUrl(amazonUrl);
+
+      if (!asin) {
+        req.flash("error", "Unable to extract ASIN from the provided link.");
+        return res.render("deal/views/post-deal", {
+          page_name: "post-deal",
+          page_title: "Post Deal",
+          user: req.user,
+          dealInfo: null,
+          errorMessage: "Please provide a valid Amazon product link.",
+        });
+      }
+
+      const itemDetails = await amazonHelper.fetchItemDetailsByAsin(asin);
+      const timestamp = new Date().toISOString();
+
+      const webhookPayload = {
+        asin,
+        name: itemDetails?.title || "",
+        price: itemDetails?.price || "",
+        image: itemDetails?.image || "",
+        url: itemDetails?.url || amazonUrl,
+        fetchedAt: timestamp,
+      };
+
+      console.log("[Post Deal] Webhook payload would be:");
+      console.log(JSON.stringify(webhookPayload, null, 2));
+
+      req.flash("success", "Deal prepared. Check server logs for the webhook payload.");
+      return res.render("deal/views/post-deal", {
+        page_name: "post-deal",
+        page_title: "Post Deal",
+        user: req.user,
+        dealInfo: webhookPayload,
+        errorMessage: null,
+      });
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  }
 
   async renderAddDealPage(req, res) {
     const category = await CategoryRepository.getAllByField({
