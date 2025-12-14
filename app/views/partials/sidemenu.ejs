@@ -73,6 +73,12 @@
                     <span class="menu-item text-truncate" data-i18n="Deal Form">Deal Management</span>
                 </a>
             </li>
+            <li class="<%=(page_name == 'post-deal') ? 'active' : ''%> nav-item">
+                <a class="d-flex align-items-center" href="<%= generateUrl('deal.post.form') %>">
+                    <i data-feather="external-link"></i>
+                    <span class="menu-item text-truncate" data-i18n="Post Deal">Post Deal</span>
+                </a>
+            </li>
             <li class="<%=(page_name == 'keyword-management') ? 'active' : ''%> nav-item">
                 <a class="d-flex align-items-center" href="<%= generateUrl('admin.keyword.listing') %>">
                     <i data-feather="key"></i>
