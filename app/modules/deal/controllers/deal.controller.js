@@ -18,7 +18,9 @@ const axios = require("axios");
 const SYSAVINGS_API_BASE_URL = 'https://api.sysavings.com';
 const amazonHelper = require("../../../helper/amazon");
 class DealController {
-  constructor() { }
+  constructor() {
+    this.postDealFromAmazon = this.postDealFromAmazon.bind(this);
+  }
 
   /**
    * @Method list
