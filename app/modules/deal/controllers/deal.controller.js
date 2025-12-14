@@ -16,6 +16,7 @@ const CategoryRepository = require("../../category/repositories/category.reposit
 const _ = require("lodash")
 const axios = require("axios");
 const SYSAVINGS_API_BASE_URL = 'https://api.sysavings.com';
+const amazonHelper = require("../../../helper/amazon");
 class DealController {
   constructor() { }
 
@@ -214,6 +215,92 @@ class DealController {
    * @Method renderAddFaqPage
    * @Description to render add Deal page
    */
+
+  async renderPostDealPage(req, res) {
+    try {
+      res.render("deal/views/post-deal", {
+        page_name: "post-deal",
+        page_title: "Post Deal",
+        user: req.user,
+        dealInfo: null,
+        errorMessage: null,
+      });
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  }
+
+  formatCreatedAtEastern() {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      weekday: "short",
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(now).reduce((acc, part) => {
+      acc[part.type] = part.value;
+      return acc;
+    }, {});
+
+    return `${parts.weekday} ${parts.month} ${parts.day} ${parts.year} ${parts.hour}:${parts.minute}:${parts.second} GMT-5`;
+  }
+
+  async postDealFromAmazon(req, res) {
+    try {
+      const { amazonUrl } = req.body;
+      const asin = await amazonHelper.extractAsinFromUrl(amazonUrl);
+
+      if (!asin) {
+        req.flash("error", "Unable to extract ASIN from the provided link.");
+        return res.render("deal/views/post-deal", {
+          page_name: "post-deal",
+          page_title: "Post Deal",
+          user: req.user,
+          dealInfo: null,
+          errorMessage: "Please provide a valid Amazon product link.",
+        });
+      }
+
+      const itemDetails = await amazonHelper.fetchItemDetailsByAsin(asin);
+      const createdAt = this.formatCreatedAtEastern();
+      const webhookPayload = {
+        Company: "Amazon",
+        Image: itemDetails?.image || "",
+        Mtype: "Electronics and Technology",
+        Name: itemDetails?.title || "",
+        Off: typeof itemDetails?.off === "number" ? itemDetails.off : itemDetails?.off || "",
+        Price1: itemDetails?.price1 || "",
+        Price2: itemDetails?.price2 || "",
+        Subtype: "Televisions",
+        Url: itemDetails?.url || amazonUrl,
+        createdAt,
+        id: asin,
+      };
+
+      console.log("[Post Deal] Webhook payload would be:");
+      console.log(JSON.stringify(webhookPayload, null, 2));
+
+      req.flash("success", "Deal prepared. Check server logs for the webhook payload.");
+      return res.render("deal/views/post-deal", {
+        page_name: "post-deal",
+        page_title: "Post Deal",
+        user: req.user,
+        dealInfo: webhookPayload,
+        errorMessage: null,
+      });
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  }
 
   async renderAddDealPage(req, res) {
     const category = await CategoryRepository.getAllByField({
