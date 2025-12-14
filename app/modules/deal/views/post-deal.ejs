@@ -53,19 +53,25 @@
                                             <div class="col-md-6">
                                                 <h5>Deal Summary</h5>
                                                 <ul class="list-unstyled">
-                                                    <li><strong>ASIN:</strong> <%= dealInfo.asin %></li>
-                                                    <li><strong>Title:</strong> <%= dealInfo.name || 'Unavailable' %></li>
-                                                    <li><strong>Price:</strong> <%= dealInfo.price || 'Unavailable' %></li>
-                                                    <li><strong>URL:</strong> <a href="<%= dealInfo.url %>" target="_blank" rel="noopener">Open product</a></li>
-                                                    <li><strong>Fetched At:</strong> <%= dealInfo.fetchedAt %></li>
+                                                    <li><strong>ASIN:</strong> <%= dealInfo.id %></li>
+                                                    <li><strong>Title:</strong> <%= dealInfo.Name || 'Unavailable' %></li>
+                                                    <li><strong>Price 1:</strong> <%= dealInfo.Price1 || 'Unavailable' %></li>
+                                                    <li><strong>Price 2:</strong> <%= dealInfo.Price2 || 'Unavailable' %></li>
+                                                    <li><strong>Percent Off:</strong> <%= dealInfo.Off || 'Unavailable' %></li>
+                                                    <li><strong>URL:</strong> <a href="<%= dealInfo.Url %>" target="_blank" rel="noopener">Open product</a></li>
+                                                    <li><strong>Created At:</strong> <%= dealInfo.createdAt %></li>
                                                 </ul>
                                             </div>
                                             <div class="col-md-6">
-                                                <% if (dealInfo.image) { %>
-                                                    <img src="<%= dealInfo.image %>" alt="Product image" class="img-fluid rounded" />
+                                                <% if (dealInfo.Image) { %>
+                                                    <img src="<%= dealInfo.Image %>" alt="Product image" class="img-fluid rounded" />
                                                 <% } else { %>
                                                     <div class="text-muted">No image available from Amazon preview.</div>
                                                 <% } %>
+                                            </div>
+                                            <div class="col-12 mt-2">
+                                                <h6>Webhook JSON preview</h6>
+                                                <pre class="bg-light p-1 border"><%= JSON.stringify(dealInfo, null, 2) %></pre>
                                             </div>
                                         </div>
                                     <% } %>

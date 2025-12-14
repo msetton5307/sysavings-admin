@@ -231,6 +231,28 @@ class DealController {
     }
   }
 
+  formatCreatedAtEastern() {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      weekday: "short",
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(now).reduce((acc, part) => {
+      acc[part.type] = part.value;
+      return acc;
+    }, {});
+
+    return `${parts.weekday} ${parts.month} ${parts.day} ${parts.year} ${parts.hour}:${parts.minute}:${parts.second} GMT-5`;
+  }
+
   async postDealFromAmazon(req, res) {
     try {
       const { amazonUrl } = req.body;
@@ -248,15 +270,19 @@ class DealController {
       }
 
       const itemDetails = await amazonHelper.fetchItemDetailsByAsin(asin);
-      const timestamp = new Date().toISOString();
-
+      const createdAt = this.formatCreatedAtEastern();
       const webhookPayload = {
-        asin,
-        name: itemDetails?.title || "",
-        price: itemDetails?.price || "",
-        image: itemDetails?.image || "",
-        url: itemDetails?.url || amazonUrl,
-        fetchedAt: timestamp,
+        Company: "Amazon",
+        Image: itemDetails?.image || "",
+        Mtype: "Electronics and Technology",
+        Name: itemDetails?.title || "",
+        Off: typeof itemDetails?.off === "number" ? itemDetails.off : itemDetails?.off || "",
+        Price1: itemDetails?.price1 || "",
+        Price2: itemDetails?.price2 || "",
+        Subtype: "Televisions",
+        Url: itemDetails?.url || amazonUrl,
+        createdAt,
+        id: asin,
       };
 
       console.log("[Post Deal] Webhook payload would be:");

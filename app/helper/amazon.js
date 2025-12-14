@@ -24,6 +24,67 @@ async function extractAsinFromUrl(url) {
   }
 }
 
+function extractFirstMatch(html, patterns) {
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+  }
+  return "";
+}
+
+function extractAllMatches(html, pattern) {
+  const matches = [];
+  const regex = new RegExp(pattern, "gi");
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    if (match[1]) {
+      matches.push(match[1].trim());
+    }
+  }
+  return matches;
+}
+
+function parsePriceDetails(html) {
+  const primaryPrice = extractFirstMatch(html, [
+    /id=["']priceblock_dealprice["'][^>]*>([^<]+)</i,
+    /id=["']priceblock_ourprice["'][^>]*>([^<]+)</i,
+    /"priceToPay"[^}]*"displayPrice"\s*:\s*"([^\"]+)"/i,
+    /apexPriceToPay[^]*?<span[^>]*class=\"a-offscreen\"[^>]*>\s*([^<]+)\s*<\/span>/i,
+  ]);
+
+  const offscreenPrices = extractAllMatches(
+    html,
+    'class="a-offscreen"[^>]*>\\s*([^<]+)\\s*<\\/span>'
+  );
+
+  const crossedOut = extractFirstMatch(html, [
+    /class=\"a-price a-text-price[^\"]*\"[^>]*>\s*<span[^>]*>\s*([^<]+)\s*<\/span>/i,
+    /id=["']listPrice["'][^>]*>\s*<span[^>]*>\s*([^<]+)\s*<\/span>/i,
+  ]);
+
+  const price1 = primaryPrice || offscreenPrices[0] || "";
+  const price2 = crossedOut || offscreenPrices[1] || "";
+
+  let off = null;
+  if (price1 && price2) {
+    const numeric = (value) => Number(value.replace(/[^0-9.]/g, ""));
+    const current = numeric(price1);
+    const original = numeric(price2);
+    if (current && original && original > current) {
+      off = Math.round(((original - current) / original) * 100);
+    }
+  }
+
+  if (off === null) {
+    const percentText = extractFirstMatch(html, [/([0-9]{1,3})%\s*off/i]);
+    off = percentText ? Number(percentText.replace(/[^0-9]/g, "")) : null;
+  }
+
+  return { price1, price2, off };
+}
+
 async function fetchItemDetailsByAsin(asin) {
   if (!asin) {
     return null;
@@ -45,15 +106,15 @@ async function fetchItemDetailsByAsin(asin) {
     const titleMatch =
       html.match(/<span[^>]*id=["']productTitle["'][^>]*>\s*([^<]+)\s*<\/span>/i) ||
       html.match(/<title>\s*([^<]+)\s*<\/title>/i);
-    const priceMatch =
-      html.match(/id=["']priceblock_ourprice["'][^>]*>([^<]+)</i) ||
-      html.match(/id=["']priceblock_dealprice["'][^>]*>([^<]+)</i);
     const imageMatch = html.match(/"large"\s*:\s*"([^\"]+)"/i);
+    const { price1, price2, off } = parsePriceDetails(html);
 
     return {
       asin,
       title: titleMatch ? titleMatch[1].trim() : "",
-      price: priceMatch ? priceMatch[1].trim() : "",
+      price1,
+      price2,
+      off,
       image: imageMatch ? imageMatch[1] : "",
       url: productUrl,
     };
@@ -62,7 +123,9 @@ async function fetchItemDetailsByAsin(asin) {
     return {
       asin,
       title: "",
-      price: "",
+      price1: "",
+      price2: "",
+      off: null,
       image: "",
       url: productUrl,
     };
