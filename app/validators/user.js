@@ -8,7 +8,11 @@ module.exports = {
             email: Joi.string().email().required(),
             password: Joi.string().min(4).required(),
             confirmPassword: Joi.string().min(4).optional(),
-            isAcceptAllPolicies: Joi.optional()
+            isAcceptAllPolicies: Joi.optional(),
+            device_token: Joi.string().optional(),
+            device_type: Joi.string().valid('ios', 'android').optional(),
+            deviceToken: Joi.string().optional(),
+            deviceType: Joi.string().valid('ios', 'android').optional()
         });
         try {
             await schema.validateAsync(object);
@@ -25,7 +29,9 @@ module.exports = {
             email: Joi.string().email().required(),
             password: Joi.string().min(4).required(),
             device_token:Joi.string().optional(),
-            device_type:Joi.string().optional()
+            device_type:Joi.string().optional(),
+            deviceToken: Joi.string().optional(),
+            deviceType: Joi.string().valid('ios', 'android').optional()
         });
         try {
             await schema.validateAsync(object);
