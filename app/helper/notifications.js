@@ -27,11 +27,12 @@ class NotificationHelper {
     async pushNotification(message) {
         try {
             // FCM Send notification
-
+            console.log('[NotificationHelper.pushNotification] Request payload:', JSON.stringify(message, null, 2));
             const response = await firebase_admin.messaging().send(message);
+            console.log('[NotificationHelper.pushNotification] FCM response:', response);
             return true;
         } catch (error) {
-            console.log(error, "error");
+            console.error('[NotificationHelper.pushNotification] Error sending push notification:', error);
 
             return false;
         }

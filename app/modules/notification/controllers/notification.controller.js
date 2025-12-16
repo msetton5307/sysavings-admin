@@ -114,6 +114,11 @@ class NotificationController {
     try {
       const { deal_id: dealId, title, message } = req.body;
 
+      console.log('[NotificationController.broadcast] Incoming request payload:', {
+        body: req.body,
+        userId: req.user?._id?.toString?.() || null,
+      });
+
       if (!title || !message) {
         req.flash('error', 'Title and message are required.');
         return res.redirect(namedRouter.urlFor('admin.notification.compose'));
@@ -132,7 +137,16 @@ class NotificationController {
         : [];
       const notificationImage = dealImages?.[0]?.image || deal?.notification_image || '';
 
+      console.log('[NotificationController.broadcast] Prepared deal data for notification:', {
+        dealId: deal?._id?.toString?.() || null,
+        notificationImage,
+      });
+
       const users = await userRepo.getAllByField({ isDeleted: false, status: 'Active' });
+
+      console.log('[NotificationController.broadcast] Users fetched for notification:', {
+        count: users?.length || 0,
+      });
 
       if (!users || !users.length) {
         req.flash('error', 'No users found to notify.');
@@ -149,6 +163,11 @@ class NotificationController {
           notification_image: notificationImage,
           isWeb: true,
         };
+
+        console.log('[NotificationController.broadcast] Saving notification for user:', {
+          userId: String(targetUser._id),
+          notificationData,
+        });
 
         await notificationRepo.save(notificationData);
 
@@ -169,13 +188,25 @@ class NotificationController {
             data: pushData,
           };
 
+          console.log('[NotificationController.broadcast] Sending push notification:', {
+            userId: String(targetUser._id),
+            payload: pushPayload,
+          });
+
           await notificationHelper.pushNotification(pushPayload);
+        } else {
+          console.log('[NotificationController.broadcast] Skipping push notification:', {
+            userId: String(targetUser._id),
+            hasDeviceToken: !!targetUser.device_token,
+            notificationsEnabled: targetUser.notifications === true,
+          });
         }
       }
 
       req.flash('success', 'Notification sent successfully.');
       res.redirect(namedRouter.urlFor('admin.notification.compose'));
     } catch (error) {
+      console.error('[NotificationController.broadcast] Unable to send notification due to error:', error);
       req.flash('error', 'Unable to send notification. Please try again.');
       res.redirect(namedRouter.urlFor('admin.notification.compose'));
     }
