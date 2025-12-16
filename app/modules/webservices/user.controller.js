@@ -34,6 +34,11 @@ class UserControllerApi {
                 return requestHandler.validation_error(res, 'Validation Error')(validationError);
             }
 
+            const deviceToken = req.body.deviceToken || req.body.device_token;
+            const deviceType = (req.body.deviceType || req.body.device_type || '').toLowerCase();
+            const allowedDeviceTypes = ['ios', 'android'];
+            const normalizedDeviceType = allowedDeviceTypes.includes(deviceType) ? deviceType : undefined;
+
             const user = new userModel()
             const userRole = await roleRepo.getByField({ role: "user" });
 
@@ -41,7 +46,20 @@ class UserControllerApi {
                 return requestHandler.throwError(500, 'Internal Server Error', 'User role is not configured')()
             }
 
-            req.body.role = userRole._id;
+            const newUserData = {
+                ...req.body,
+                role: userRole._id,
+                password: user.generateHash(req.body.password)
+            };
+
+            if (deviceToken) {
+                newUserData.device_token = deviceToken;
+            }
+
+            if (normalizedDeviceType) {
+                newUserData.device_type = normalizedDeviceType;
+            }
+
             const emailExists = await userRepo.getByField({ email: req.body.email, isDeleted: false });
             console.log(emailExists);
 
@@ -54,9 +72,8 @@ class UserControllerApi {
                 return requestHandler.throwError(400, 'Password and Confirm Password do not match')()
             }
 
-            req.body.password = user.generateHash(req.body.password);
             // console.log(req.body);
-            let saved = await userRepo.save(req.body);
+            let saved = await userRepo.save(newUserData);
             console.log("saved: ", saved);
             if (!_.isEmpty(saved) && saved._id) {
 
@@ -202,6 +219,11 @@ class UserControllerApi {
                 return requestHandler.validation_error(res, 'Validation Error')(validationError);
             }
 
+            const deviceToken = req.body.deviceToken || req.body.device_token;
+            const deviceType = (req.body.deviceType || req.body.device_type || '').toLowerCase();
+            const allowedDeviceTypes = ['ios', 'android'];
+            const normalizedDeviceType = allowedDeviceTypes.includes(deviceType) ? deviceType : undefined;
+
             const user = new userModel()
             let emailExists = await userRepo.getByField({ email: req.body.email, isDeleted: false })
             // console.log(emailExists);
@@ -222,7 +244,16 @@ class UserControllerApi {
                 let token = jwt.sign(payload, config.auth.jwtSecret, {
                     expiresIn: process.env.JWT_EXPIRES_IN, // token expiration time
                 });
-                await userRepo.updateByField({ device_type: req.body.device_type, device_token: req.body.device_token }, { _id: emailExists._id })
+                const updateDeviceInfo = {};
+                if (deviceToken) {
+                    updateDeviceInfo.device_token = deviceToken;
+                }
+                if (normalizedDeviceType) {
+                    updateDeviceInfo.device_type = normalizedDeviceType;
+                }
+                if (!_.isEmpty(updateDeviceInfo)) {
+                    await userRepo.updateByField(updateDeviceInfo, { _id: emailExists._id })
+                }
                 let refresh_token = await helper.createRefreshToken(payload)
                 let logincrediatials = {
                     email: req.body.email,
