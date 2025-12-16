@@ -5,7 +5,8 @@ const notification_type = ['offer', 'task', 'question', 'question-reply', 'offer
 
 
 const notificationSchema = new Schema({
-    reference_user_id: { type: Schema.Types.ObjectId, ref: 'deal' },
+    reference_user_id: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    reference_deal_id: { type: Schema.Types.ObjectId, ref: 'deal', default: null },
     target_user_id: { type: Schema.Types.ObjectId, ref: 'User' },
     notification_title: { type: String, default: '' },
     notification_message: { type: String, default: '' },

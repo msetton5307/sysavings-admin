@@ -584,6 +584,7 @@ class DealController {
           notification_title: message.notification.title,
           notification_message: message.notification.body,
           notification_description: "Here is Your Deal Status You Posted",
+          reference_deal_id: existDeal._id,
           target_user_id: existUser._id
         }
 

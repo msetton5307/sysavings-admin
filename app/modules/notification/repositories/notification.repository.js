@@ -338,6 +338,37 @@ const NotificationRepo = {
                 },
                 {
                     $lookup: {
+                        from: 'deals',
+                        let: { deal_id: '$reference_deal_id' },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ['$_id', '$$deal_id'] },
+                                            { $eq: ['$isDeleted', false] },
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                $project: {
+                                    deal_title: 1,
+                                    description: 1
+                                }
+                            }
+                        ],
+                        as: 'reference_deal_details'
+                    }
+                },
+                {
+                    $unwind: {
+                        path: '$reference_deal_details',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
+                    $lookup: {
                         from: 'tasks',
                         let: { user_id: '$task_id' },
                         pipeline: [
@@ -375,6 +406,8 @@ const NotificationRepo = {
                         "notification_message": 1,
                         "createdAt": 1,
                         "reference_user_details": 1,
+                        "reference_deal_id": 1,
+                        "reference_deal_details": 1,
                         "task_details": 1,
                         "type": 1,
                         "zone":1

@@ -155,7 +155,7 @@ class NotificationController {
 
       for (const targetUser of users) {
         const notificationData = {
-          ...(deal?._id && mongoose.Types.ObjectId.isValid(deal._id) ? { reference_user_id: deal._id } : {}),
+          ...(deal?._id && mongoose.Types.ObjectId.isValid(deal._id) ? { reference_deal_id: deal._id } : {}),
           target_user_id: targetUser._id,
           notification_title: title,
           notification_message: message,

@@ -160,6 +160,7 @@ class DealControllerApi {
                     notification_title: message.notification.title,
                     notification_description: "Your Deal is being Pending for Approval",
                     notification_message: message.notification.body,
+                    reference_deal_id: saveData._id,
                     target_user_id: req.user._id
                 }
                 console.log("notification_save: ", notification_save);
@@ -399,6 +400,7 @@ class DealControllerApi {
             const discount = req.body.Off ?? 25;
             const title = req.body.Name || "Special Offer";
             const messageText = `🔥 Get up to ${discount}% OFF. Shop now to grab the best offers on a variety of products, Deals are live NOW!`;
+            const dealReference = mongoose.Types.ObjectId.isValid(req.body.id) ? req.body.id : null;
 
             for (let user of allUsers) {
                 let data = {
@@ -407,7 +409,8 @@ class DealControllerApi {
                     notification_message: messageText,
                     notification_description: "",
                     notification_image: req.body.Image || null,
-                    isWeb: true
+                    isWeb: true,
+                    ...(dealReference ? { reference_deal_id: dealReference } : {}),
                 };
 
                 let saved = await notificationRepo.save(data);
