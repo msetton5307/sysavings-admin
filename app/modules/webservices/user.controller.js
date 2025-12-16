@@ -22,6 +22,23 @@ let stripe = require("../../helper/stripe")
 const { default: mongoose } = require("mongoose")
 const helper = require("../../helper/helper")
 
+const normalizeDeviceType = (deviceTypeValue) => {
+    const deviceTypeMap = {
+        ios: 'ios',
+        iphone: 'ios',
+        ipad: 'ios',
+        apple: 'ios',
+        android: 'android'
+    };
+
+    if (!deviceTypeValue) {
+        return undefined;
+    }
+
+    const normalizedValue = deviceTypeValue.toString().trim().toLowerCase();
+    return deviceTypeMap[normalizedValue];
+};
+
 
 class UserControllerApi {
 
@@ -35,9 +52,7 @@ class UserControllerApi {
             }
 
             const deviceToken = req.body.deviceToken || req.body.device_token;
-            const deviceType = (req.body.deviceType || req.body.device_type || '').toLowerCase();
-            const allowedDeviceTypes = ['ios', 'android'];
-            const normalizedDeviceType = allowedDeviceTypes.includes(deviceType) ? deviceType : undefined;
+            const normalizedDeviceType = normalizeDeviceType(req.body.deviceType || req.body.device_type);
 
             const user = new userModel()
             const userRole = await roleRepo.getByField({ role: "user" });
@@ -220,9 +235,7 @@ class UserControllerApi {
             }
 
             const deviceToken = req.body.deviceToken || req.body.device_token;
-            const deviceType = (req.body.deviceType || req.body.device_type || '').toLowerCase();
-            const allowedDeviceTypes = ['ios', 'android'];
-            const normalizedDeviceType = allowedDeviceTypes.includes(deviceType) ? deviceType : undefined;
+            const normalizedDeviceType = normalizeDeviceType(req.body.deviceType || req.body.device_type);
 
             const user = new userModel()
             let emailExists = await userRepo.getByField({ email: req.body.email, isDeleted: false })
@@ -665,7 +678,7 @@ class UserControllerApi {
         try {
             const { email, socialId, registerType } = req.body;
             const deviceToken = req.body.deviceToken || req.body.device_token;
-            const deviceType = req.body.deviceType || req.body.device_type;
+            const deviceType = normalizeDeviceType(req.body.deviceType || req.body.device_type);
 
             if (!email || !socialId || !registerType) {
                 return requestHandler.throwError(400, 'Bad Request', 'Missing required fields: email, socialId, or registerType')();
@@ -693,9 +706,12 @@ class UserControllerApi {
 
             if (existingUser && existingUser._id) {
                 // Update device info if provided
-                if (deviceToken && deviceType) {
+                if (deviceToken || deviceType) {
                     await userRepo.updateById(
-                        { device_token: deviceToken, device_type: deviceType },
+                        {
+                            ...(deviceToken ? { device_token: deviceToken } : {}),
+                            ...(deviceType ? { device_type: deviceType } : {})
+                        },
                         existingUser._id
                     );
                 }
@@ -716,8 +732,11 @@ class UserControllerApi {
 
                 const updateData = { socialId, registerType: normalizedRegisterType };
 
-                if (deviceToken && deviceType) {
+                if (deviceToken) {
                     updateData.device_token = deviceToken;
+                }
+
+                if (deviceType) {
                     updateData.device_type = deviceType;
                 }
 
