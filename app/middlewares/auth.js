@@ -121,7 +121,7 @@ module.exports = () => {
                             }
 
                             if (userdevices.length) {
-                                let deviceData = _.findWhere(userdevices, { access_token: token });
+                                let deviceData = _.find(userdevices, { access_token: token });
                                 if (deviceData && !deviceData.expired) {
                                     // userdevices = userdevices.map(item=>{return (item.access_token != token)?item:null});
                                     // userdevices = _.without(userdevices, null);
@@ -253,7 +253,7 @@ module.exports = () => {
                                 userdevices = user.userdevices;
                             }
                             if (userdevices.length) {
-                                let deviceData = _.findWhere(userdevices, { access_token: token });
+                                let deviceData = _.find(userdevices, { access_token: token });
                                 if (deviceData && !deviceData.expired) {
                                     // userdevices = userdevices.map(item=>{return (item.access_token != token)?item:null});
                                     // userdevices = _.without(userdevices, null);
@@ -424,7 +424,7 @@ module.exports = () => {
                             }
 
                             if (userdevices.length) {
-                                let deviceData = _.findWhere(userdevices, { access_token: token });
+                                let deviceData = _.find(userdevices, { access_token: token });
                                 if (deviceData && !deviceData.expired) {
                                     let obj = {
                                         deviceToken: (req.body && req.body.deviceToken) ? req.body.deviceToken : deviceData.deviceToken,
@@ -532,7 +532,7 @@ module.exports = () => {
                                 userdevices = user.userdevices;
                             }
                             if (userdevices.length) {
-                                let deviceData = _.findWhere(userdevices, { access_token: token });
+                                let deviceData = _.find(userdevices, { access_token: token });
                                 if (deviceData && !deviceData.expired) {
                                     let obj = {
                                         deviceToken: (req.body && req.body.deviceToken) ? req.body.deviceToken : deviceData.deviceToken,

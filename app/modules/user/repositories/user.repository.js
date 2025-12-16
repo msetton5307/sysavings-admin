@@ -72,7 +72,7 @@ const userRepository = {
             }
 
             if (req.body.columns && req.body.columns.length) {
-                let statusFilter = _.findWhere(req.body.columns, { data: 'status' });
+                let statusFilter = _.find(req.body.columns, { data: 'status' });
                 if (statusFilter && statusFilter.search && statusFilter.search.value) {
                     and_clauses.push({
                         "status": statusFilter.search.value
@@ -172,7 +172,7 @@ const userRepository = {
             }
 
             if (req.body.columns && req.body.columns.length) {
-                let statusFilter = _.findWhere(req.body.columns, { data: 'status' });
+                let statusFilter = _.find(req.body.columns, { data: 'status' });
                 if (statusFilter && statusFilter.search && statusFilter.search.value) {
                     and_clauses.push({
                         "status": statusFilter.search.value
@@ -1431,7 +1431,7 @@ const userRepository = {
             }
 
             if (req.body.columns && req.body.columns.length) {
-                let statusFilter = _.findWhere(req.body.columns, { data: 'status' });
+                let statusFilter = _.find(req.body.columns, { data: 'status' });
                 if (statusFilter && statusFilter.search && statusFilter.search.value) {
                     and_clauses.push({
                         "status": statusFilter.search.value
@@ -1518,7 +1518,7 @@ const userRepository = {
 
             if (req.body.columns && req.body.columns.length) {
 
-                let statusFilter = _.findWhere(req.body.columns, { data: 'status' });
+                let statusFilter = _.find(req.body.columns, { data: 'status' });
                 if (statusFilter && statusFilter.search && statusFilter.search.value) {
 
                     and_clauses.push({

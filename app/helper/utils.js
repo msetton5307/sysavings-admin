@@ -151,7 +151,7 @@ let Utils = {
 		}
 	},
 	inArrayObject: (rules, findBy) => {
-		const _rules = _.findWhere(rules, findBy);
+		const _rules = _.find(rules, findBy);
 		if (!_rules) {
 			return false;
 		} else {
