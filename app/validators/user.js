@@ -10,9 +10,9 @@ module.exports = {
             confirmPassword: Joi.string().min(4).optional(),
             isAcceptAllPolicies: Joi.optional(),
             device_token: Joi.string().optional(),
-            device_type: Joi.string().valid('ios', 'android').optional(),
+            device_type: Joi.string().valid('ios', 'android', 'apple', 'iphone', 'ipad').optional(),
             deviceToken: Joi.string().optional(),
-            deviceType: Joi.string().valid('ios', 'android').optional()
+            deviceType: Joi.string().valid('ios', 'android', 'apple', 'iphone', 'ipad').optional()
         });
         try {
             await schema.validateAsync(object);
@@ -31,7 +31,7 @@ module.exports = {
             device_token:Joi.string().optional(),
             device_type:Joi.string().optional(),
             deviceToken: Joi.string().optional(),
-            deviceType: Joi.string().valid('ios', 'android').optional()
+            deviceType: Joi.string().valid('ios', 'android', 'apple', 'iphone', 'ipad').optional()
         });
         try {
             await schema.validateAsync(object);
